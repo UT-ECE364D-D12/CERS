@@ -4,8 +4,8 @@ def movie_data_process(data):
     # Sort the data by user_id and timestamp
     data = data.sort_values(by=['user_id', 'timestamp'])
 
-    # Initialize lists to store training and test data
-    training_data = []
+    # Initialize lists to store processed training and test data
+    processed_data = []
     test_data = []
 
     # Group the data by user_id
@@ -13,38 +13,26 @@ def movie_data_process(data):
 
     # Iterate over each user's group
     for user_id, group in grouped:
-        # Sort by timestamp (in case the data wasn't already sorted)
-        group = group.sort_values(by='timestamp', ascending=True)
-        
-        # Separate the last movie (for test data) from the rest (for training data)
+        # Create a list of (movie_id, rating) pairs for the user
         movies_watched = list(zip(group['movie_id'], group['rating']))
         
         if len(movies_watched) > 1:
-            # Add to training data (all but the last movie)
-            # Convert the list of (movie_id, rating) tuples to space-separated strings
-            movie_rating_str = ' '.join([f"{movie_id} {rating}" for movie_id, rating in movies_watched[:-1]])
-            training_data.append([user_id, movie_rating_str])
+            # Append all but the last movie for training data
+            processed_data.extend([[user_id, int(movie_id), int(rating)] for movie_id, rating in movies_watched[:-1]])
             
-            # Add to test data (the last movie)
-            latest_movie = movies_watched[-1]
-            test_data.append([user_id, latest_movie[0], latest_movie[1]])
-        elif len(movies_watched) == 1:
-            # If there's only one movie, put it in test data and skip training data
-            latest_movie = movies_watched[0]
-            test_data.append([user_id, latest_movie[0], latest_movie[1]])
+            # Get the last movie watched by the user for the test data
+            last_movie = movies_watched[-1]
+            test_data.append([user_id, int(last_movie[0]), int(last_movie[1])])
 
-    # Convert training data to DataFrame
-    training_df = pd.DataFrame({
-        'user_id': [row[0] for row in training_data],
-        'movies_ratings': [row[1] for row in training_data]  # Space-separated movie_id and rating pairs
-    })
+    # Convert processed training data to DataFrame
+    processed_df = pd.DataFrame(processed_data, columns=['user_id', 'movie_id', 'rating'])
 
     # Convert test data to DataFrame
     test_df = pd.DataFrame(test_data, columns=['user_id', 'movie_id', 'rating'])
 
-    # Optionally save to CSV
-    training_df.to_csv('data/ml-100k/trial_movie_training_data.csv', index=False)
-    test_df.to_csv('data/ml-100k/trial_movie_test_data.csv', index=False)
+    # Save to CSV with no header and no index
+    processed_df.to_csv('data/ml-100k/trial_movie_training_data.csv', index=False, header=False, sep=' ')
+    test_df.to_csv('data/ml-100k/trial_movie_test_data.csv', index=False, header=False, sep=' ')
 
 if __name__ == "__main__":
     # Load the data
