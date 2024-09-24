@@ -1,7 +1,6 @@
 import pandas as pd
 
-
-def movie_data_process (data):
+def movie_data_process(data):
     # Sort the data by user_id and timestamp
     data = data.sort_values(by=['user_id', 'timestamp'])
 
@@ -22,7 +21,9 @@ def movie_data_process (data):
         
         if len(movies_watched) > 1:
             # Add to training data (all but the last movie)
-            training_data.append([user_id] + [movies_watched[:-1]])
+            # Convert the list of (movie_id, rating) tuples to space-separated strings
+            movie_rating_str = ' '.join([f"{movie_id} {rating}" for movie_id, rating in movies_watched[:-1]])
+            training_data.append([user_id, movie_rating_str])
             
             # Add to test data (the last movie)
             latest_movie = movies_watched[-1]
@@ -35,15 +36,15 @@ def movie_data_process (data):
     # Convert training data to DataFrame
     training_df = pd.DataFrame({
         'user_id': [row[0] for row in training_data],
-        'movies_ratings': [row[1] for row in training_data]  # The list of (movie_id, rating) pairs
+        'movies_ratings': [row[1] for row in training_data]  # Space-separated movie_id and rating pairs
     })
 
     # Convert test data to DataFrame
     test_df = pd.DataFrame(test_data, columns=['user_id', 'movie_id', 'rating'])
 
     # Optionally save to CSV
-    training_df.to_csv('trial_movie_training_data.csv', index=False)
-    test_df.to_csv('trial_movie_test_data.csv', index=False)
+    training_df.to_csv('data/ml-100k/trial_movie_training_data.csv', index=False)
+    test_df.to_csv('data/ml-100k/trial_movie_test_data.csv', index=False)
 
 if __name__ == "__main__":
     # Load the data
